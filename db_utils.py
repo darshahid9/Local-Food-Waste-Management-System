@@ -6,35 +6,48 @@
 # Author    : Shahid Bashir Dar
 # ============================================================
 
+import os
+import tempfile
 import mysql.connector
 import pandas as pd
+import streamlit as st
 
 # ------------------------------------------------------------
 # MySQL connection settings - Aiven Cloud MySQL
-# NOTE: Update host/port/user/password/database to match your
-# Aiven service's "Connection information" page.
-# ca.pem must be in the same folder as this file (downloaded
-# from Aiven's "Secure connection" / certificate button).
+# Credentials are read from Streamlit secrets (.streamlit/secrets.toml
+# locally, or the "Secrets" panel on Streamlit Community Cloud).
+# NEVER hardcode credentials directly in this file.
 # ------------------------------------------------------------
-import os
 
-DB_CONFIG = {
-    "host": "mysql-285ca4dc-darshahid9-987c.i.aivencloud.com",       # e.g. mysql-285ca4dc-xxxx.aivencloud.com
-    "port": 21399,                         # your Aiven port (NOT default 3306)
-    "user": "avnadmin",
-    "password": "AVNS_4gwLaOBmt7GWuJ98kom",
-    "database": "food_wastage_db",
-    "ssl_ca": os.path.join(os.path.dirname(__file__), "ca.pem"),
-    "ssl_verify_cert": True,
-    "ssl_verify_identity": False,
-    "use_pure": True
-    
-}
+def _get_ca_cert_path():
+    """
+    Write the CA certificate (stored as a secret string) to a temp
+    file and return its path, since mysql-connector needs a file path,
+    not raw text.
+    """
+    ca_cert_content = st.secrets["mysql"]["ssl_ca_content"]
+    tmp_file = tempfile.NamedTemporaryFile(mode="w", suffix=".pem", delete=False)
+    tmp_file.write(ca_cert_content)
+    tmp_file.close()
+    return tmp_file.name
 
 
 def get_connection():
-    """Create and return a new MySQL connection."""
-    return mysql.connector.connect(**DB_CONFIG)
+    """Create and return a new MySQL connection using Streamlit secrets."""
+    db_secrets = st.secrets["mysql"]
+
+    config = {
+        "host": db_secrets["host"],
+        "port": int(db_secrets["port"]),
+        "user": db_secrets["user"],
+        "password": db_secrets["password"],
+        "database": db_secrets["database"],
+        "ssl_ca": _get_ca_cert_path(),
+        "ssl_verify_cert": True,
+        "ssl_verify_identity": False,
+        "use_pure": True,
+    }
+    return mysql.connector.connect(**config)
 
 
 def run_query(query, params=None):
