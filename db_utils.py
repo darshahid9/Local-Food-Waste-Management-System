@@ -10,14 +10,25 @@ import mysql.connector
 import pandas as pd
 
 # ------------------------------------------------------------
-# MySQL connection settings
-# NOTE: Update these values to match your local MySQL setup
+# MySQL connection settings - Aiven Cloud MySQL
+# NOTE: Update host/port/user/password/database to match your
+# Aiven service's "Connection information" page.
+# ca.pem must be in the same folder as this file (downloaded
+# from Aiven's "Secure connection" / certificate button).
 # ------------------------------------------------------------
+import os
+
 DB_CONFIG = {
-    "host": "localhost",
-    "user": "root",
-    "password": "YOUR_PASSWORD_HERE",
-    "database": "food_wastage_db"
+    "host": "mysql-285ca4dc-darshahid9-987c.i.aivencloud.com",       # e.g. mysql-285ca4dc-xxxx.aivencloud.com
+    "port": 21399,                         # your Aiven port (NOT default 3306)
+    "user": "avnadmin",
+    "password": "AVNS_4gwLaOBmt7GWuJ98kom",
+    "database": "food_wastage_db",
+    "ssl_ca": os.path.join(os.path.dirname(__file__), "ca.pem"),
+    "ssl_verify_cert": True,
+    "ssl_verify_identity": False,
+    "use_pure": True
+    
 }
 
 
